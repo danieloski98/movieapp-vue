@@ -25,9 +25,18 @@
             </template>
         </div>
 
+        <!-- Loading Trigger -->
+        <div 
+            v-if="!pending && !error" 
+            ref="loadMoreTrigger"
+            class="h-10 w-full flex items-center justify-center my-4"
+        >
+            <div v-if="isLoadingMore" class="text-gray-500">Loading more...</div>
+        </div>
+
         <!-- Error State -->
         <div v-if="error" class="mt-12 text-red-500">
-            Failed to load movies. Please try again later. {{  error }}
+            Failed to load movies. Please try again later. {{ error }}
         </div>
     </div>
 </template>
@@ -41,13 +50,47 @@ import type { IMovie } from '~/models/movie';
 // states
 const searchFieldState = useState('searchFieldState', () => '');
 const moviesData = useState('movies', () => [] as Array<IMovie>);
+const page = useState('page', () => 1);
+const isLoadingMore = ref(false);
+
+// refs
+const loadMoreTrigger = ref<HTMLElement | null>(null);
 
 // api
 const { fetchMovies } = useApi();
 
-// fetch movies
-const { data: movies, pending, error } = await fetchMovies();
+// fetch initial movies
+const { data: movies, pending, error } = await fetchMovies(page.value);
+moviesData.value = [...moviesData.value, ...(movies.value as any).results];
 
-moviesData.value = [...moviesData.value, ...movies.value.results]
+// Intersection Observer setup
+onMounted(() => {
+    const observer = new IntersectionObserver(async (entries) => {
+        const trigger = entries[0];
+        if (trigger.isIntersecting && !pending.value && !error.value) {
+            isLoadingMore.value = true;
+            page.value += 1;
+            
+            try {
+                const { data: newMovies } = await fetchMovies(page.value);
+                moviesData.value = [...moviesData.value, ...(newMovies.value as any).results];
+            } catch (err) {
+                console.error('Error loading more movies:', err);
+            } finally {
+                isLoadingMore.value = false;
+            }
+        }
+    }, {
+        threshold: 1.0,
+    });
 
+    if (loadMoreTrigger.value) {
+        observer.observe(loadMoreTrigger.value);
+    }
+
+    // Cleanup
+    onUnmounted(() => {
+        observer.disconnect();
+    });
+});
 </script>

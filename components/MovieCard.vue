@@ -31,16 +31,7 @@
 </template>
 
 <script lang="ts" setup>
-// defineProps<{
-//  id: number
-//   overview: string
-//   title: string
-//   poster_path: string
-//   popularity: number
-// //   year: number
-// //   duration: string
-// }>()
-
+// props
 const props = defineProps<{
   id: number
   overview: string
