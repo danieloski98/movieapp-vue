@@ -24,5 +24,12 @@ export default defineNuxtConfig({
     },
     display: 'swap',
     preload: true,
+  },
+  runtimeConfig: {
+    public: {
+      apiBase: 'https://api.themoviedb.org/3/',
+      apiKey: process.env.TMDB_ACCESS_TOKEN,
+      imageBaseUrl: process.env.TMDB_IMAGE_BASE_URL,
+    }
   }
 })
